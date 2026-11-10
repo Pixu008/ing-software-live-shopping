@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sistema Live Shopping</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+    
+    <nav class="navbar navbar-dark bg-dark mb-4 shadow-sm">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">📖 Cuaderno Digital - Live Shopping</span>
+            <div id="navUsuario" class="d-none d-flex align-items-center">
+                <button class="btn btn-sm btn-info me-3 fw-bold" onclick="abrirModalGanancias()">📊 Historial y Ganancias</button>
+                <span class="text-light me-3">Hola, <strong id="nombreUsuarioActivo"></strong></span>
+                <button class="btn btn-sm btn-danger" onclick="cerrarSesion()">Salir</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- LOGIN -->
+        <div class="row justify-content-center" id="pantallaLogin">
+            <div class="col-md-4">
+                <div class="card shadow">
+                    <div class="card-header bg-dark text-white text-center"><strong>Iniciar Sesión</strong></div>
+                    <div class="card-body">
+                        <div class="mb-3"><input type="email" id="loginCorreo" class="form-control" value="admin@live.cl"></div>
+                        <div class="mb-3"><input type="password" id="loginPassword" class="form-control" value="1234"></div>
+                        <button class="btn btn-primary w-100 fw-bold" onclick="iniciarSesion()">Entrar al Sistema</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- APP -->
+        <div class="row d-none" id="pantallaApp">
+            
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4 border-primary">
+                    <div class="card-header bg-primary text-white fs-5">
+                        <strong>👤 1. Nuevo Cliente</strong>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Alias del Cliente</label>
+                            <input type="text" id="clienteInput" class="form-control form-control-lg" placeholder="Ej: Maria">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Prenda</label>
+                            <input type="text" id="prendaInput" class="form-control form-control-lg" placeholder="Ej: Blusa roja">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Precio ($)</label>
+                            <input type="number" id="precioInput" class="form-control form-control-lg" placeholder="Ej: 8000">
+                        </div>
+                        <button class="btn btn-success btn-lg w-100 fw-bold" onclick="asignarPrendaNueva()">➕ Crear su Carrito</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card shadow-sm border-warning">
+                    <div class="card-header bg-warning text-dark fs-5 d-flex justify-content-between align-items-center">
+                        <strong>📅 Cuaderno Activo</strong>
+                        <div class="input-group input-group-sm w-50">
+                            <span class="input-group-text bg-dark text-white border-dark">Transmisión:</span>
+                            <input type="text" id="sesionInput" class="form-control fw-bold border-dark" onblur="cargarCuaderno()">
+                            <button class="btn btn-success fw-bold border-dark" onclick="crearNuevoLive()" title="Volver al Live de hoy">➕ Nuevo</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-4 bg-white" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                        <div id="contenedorClientes" class="row"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DEL CARRITO DEL CLIENTE -->
+    <div class="modal fade" id="modalCarrito" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-warning">
+                <div class="modal-header bg-warning text-dark">
+                    <h4 class="modal-title fw-bold">Carrito de <span id="modalAlias" class="text-primary"></span></h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div id="modalEstadoContenedor" class="mb-4 text-center bg-white p-3 rounded border shadow-sm"></div>
+                    <ul class="list-group mb-3" id="modalListaPrendas"></ul>
+                    <h4 class="text-end text-success fw-bold mb-4">Total: <span id="modalTotal">0</span></h4>
+                    <hr>
+                    <h6 class="fw-bold mb-2">➕ Agregar otra prenda a este cliente:</h6>
+                    <div class="row g-2">
+                        <div class="col-7"><input type="text" id="modalNuevaPrenda" class="form-control" placeholder="¿Qué prenda es?"></div>
+                        <div class="col-5"><input type="number" id="modalNuevoPrecio" class="form-control" placeholder="Precio ($)"></div>
+                        <div class="col-12 mt-2"><button class="btn btn-success w-100 fw-bold" onclick="agregarDesdeModal()">Agregar al Carrito</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE REPORTES -->
+    <div class="modal fade" id="modalGanancias" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-info">
+                <div class="modal-header bg-info text-white">
+                    <h4 class="modal-title fw-bold">📊 Historial de Transmisiones</h4>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0"> 
+                    <div class="p-3 bg-light border-bottom">
+                        <p class="text-muted small mb-0">Haz clic en el nombre de un directo para revisarlo, o usa el basurero para eliminar sesiones antiguas.</p>
+                    </div>
+                    
+                    <div style="max-height: 60vh; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Nombre del Live</th>
+                                    <th>Fecha</th>
+                                    <th class="text-center">Clientes</th>
+                                    <th class="text-end pe-4">Recaudado</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaGanancias">
+                                <!-- Inyectado con JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let datosGlobales = {};
+        let modalCarritoInstancia = null;
+        let modalGananciasInstancia = null;
+        const formatearCLP = (valor) => '$' + parseInt(valor).toLocaleString('es-CL');
+
+        document.addEventListener("DOMContentLoaded", () => {
+            crearNuevoLive(); 
+            modalCarritoInstancia = new bootstrap.Modal(document.getElementById('modalCarrito'));
+            modalGananciasInstancia = new bootstrap.Modal(document.getElementById('modalGanancias'));
+        });
+
+        function crearNuevoLive() {
+            const hoy = new Date();
+            const dia = String(hoy.getDate()).padStart(2, '0');
+            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+            const hora = String(hoy.getHours()).padStart(2, '0');
+            const min = String(hoy.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('sesionInput').value = `Live ${dia}/${mes} - ${hora}:${min} hrs`;
+            
+            datosGlobales = {};
+            renderizarTarjetas(); 
+            document.getElementById('clienteInput').focus();
+        }
+
+        function iniciarSesion() {
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo: document.getElementById('loginCorreo').value.trim(), password: document.getElementById('loginPassword').value.trim() })
+            }).then(r => r.json()).then(data => {
+                if(data.success) {
+                    document.getElementById('pantallaLogin').classList.add('d-none');
+                    document.getElementById('pantallaApp').classList.remove('d-none');
+                    document.getElementById('navUsuario').classList.remove('d-none');
+                    document.getElementById('nombreUsuarioActivo').innerText = data.usuario.nombre;
+                    cargarCuaderno();
+                } else alert("⚠️ Credenciales incorrectas");
+            });
+        }
+
+        function cerrarSesion() {
+            document.getElementById('pantallaApp').classList.add('d-none');
+            document.getElementById('navUsuario').classList.add('d-none');
+            document.getElementById('pantallaLogin').classList.remove('d-none');
+        }
+
+        // ARREGLO DEL BUG: Usamos query parameter en la URL
+        async function cargarCuaderno() {
+            const sesion = document.getElementById('sesionInput').value.trim();
+            if(!sesion) return;
+
+            const response = await fetch(`/api/cuaderno?sesion=${encodeURIComponent(sesion)}`);
+            const data = await response.json();
+            
+            datosGlobales = {};
+            data.forEach(item => {
+                if(!datosGlobales[item.alias]) {
+                    datosGlobales[item.alias] = { id_pedido: item.id_pedido, total: item.total_pagado, estado: item.estado_pago, prendas: [] };
+                }
+                datosGlobales[item.alias].prendas.push(item);
+            });
+            renderizarTarjetas();
+        }
+
+        function renderizarTarjetas() {
+            const contenedor = document.getElementById('contenedorClientes');
+            contenedor.innerHTML = '';
+            
+            if(Object.keys(datosGlobales).length === 0) {
+                contenedor.innerHTML = '<div class="col-12 text-center text-muted mt-5">Aún no hay clientes en esta transmisión. Escribe a la izquierda para empezar.</div>';
+                return;
+            }
+
+            for (const [alias, info] of Object.entries(datosGlobales)) {
+                if (info.total > 0) {
+                    let badge = '';
+                    if(info.estado === 'pendiente') badge = '<span class="badge bg-danger">Pendiente</span>';
+                    else if(info.estado === 'pagado') badge = '<span class="badge bg-success">Pagado</span>';
+                    else if(info.estado === 'enviado') badge = '<span class="badge bg-primary">Enviado</span>';
+
+                    contenedor.innerHTML += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card shadow-sm border-0 bg-white" style="cursor: pointer;" onclick="abrirModalCarrito('${alias}')">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="mb-0 text-primary fw-bold">${alias}</h5>
+                                        ${badge}
+                                    </div>
+                                    <h5 class="mb-0 text-success fw-bold text-end">${formatearCLP(info.total)}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function abrirModalCarrito(alias) {
+            document.getElementById('modalAlias').innerText = alias;
+            document.getElementById('modalNuevaPrenda').value = '';
+            document.getElementById('modalNuevoPrecio').value = '';
+            renderizarInteriorModal(alias);
+            modalCarritoInstancia.show();
+        }
+
+        function renderizarInteriorModal(alias) {
+            if(!datosGlobales[alias]) return;
+            const info = datosGlobales[alias];
+            
+            const btnPendiente = info.estado === 'pendiente' ? 'btn-danger' : 'btn-outline-danger';
+            const btnPagado = info.estado === 'pagado' ? 'btn-success' : 'btn-outline-success';
+            const btnEnviado = info.estado === 'enviado' ? 'btn-primary' : 'btn-outline-primary';
+
+            document.getElementById('modalEstadoContenedor').innerHTML = `
+                <div class="text-muted fw-bold mb-2">Estado de la compra:</div>
+                <div class="btn-group w-100">
+                    <button class="btn ${btnPendiente} fw-bold" onclick="cambiarEstado(${info.id_pedido}, 'pendiente')">Pendiente</button>
+                    <button class="btn ${btnPagado} fw-bold" onclick="cambiarEstado(${info.id_pedido}, 'pagado')">Pagado</button>
+                    <button class="btn ${btnEnviado} fw-bold" onclick="cambiarEstado(${info.id_pedido}, 'enviado')">Enviado</button>
+                </div>
+            `;
+
+            const lista = document.getElementById('modalListaPrendas');
+            lista.innerHTML = '';
+            let total = 0;
+            
+            info.prendas.forEach(p => {
+                total += parseFloat(p.precio);
+                lista.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                        <span>${p.prenda} <strong class="text-success ms-2">(${formatearCLP(p.precio)})</strong></span>
+                        <button class="btn btn-outline-danger btn-sm px-2 py-0 fw-bold" onclick="eliminarPrendaModal(${p.id_detalle}, '${alias}')" title="Quitar">X</button>
+                    </li>
+                `;
+            });
+            document.getElementById('modalTotal').innerText = formatearCLP(total);
+        }
+
+        async function cambiarEstado(idPedido, nuevoEstado) {
+            await fetch(`/api/pedido/${idPedido}/estado`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ estado: nuevoEstado }) });
+            await cargarCuaderno();
+            renderizarInteriorModal(document.getElementById('modalAlias').innerText);
+        }
+
+        async function asignarPrendaNueva() {
+            const sesion = document.getElementById('sesionInput').value.trim();
+            const cliente = document.getElementById('clienteInput').value.trim();
+            const prenda = document.getElementById('prendaInput').value.trim();
+            const precio = document.getElementById('precioInput').value.trim();
+            
+            if(!cliente || !prenda || !precio || !sesion) return alert("Llena los datos y asegúrate de tener un nombre de Transmisión.");
+
+            await fetch('/api/asignar', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente_alias: cliente, prenda: prenda, precio: precio, sesion: sesion })
+            });
+
+            document.getElementById('clienteInput').value = '';
+            document.getElementById('prendaInput').value = '';
+            document.getElementById('precioInput').value = '';
+            await cargarCuaderno();
+        }
+
+        async function agregarDesdeModal() {
+            const sesion = document.getElementById('sesionInput').value.trim();
+            const cliente = document.getElementById('modalAlias').innerText;
+            const prenda = document.getElementById('modalNuevaPrenda').value.trim();
+            const precio = document.getElementById('modalNuevoPrecio').value.trim();
+
+            if(!prenda || !precio) return alert("Ingresa la prenda y el precio.");
+
+            await fetch('/api/asignar', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente_alias: cliente, prenda: prenda, precio: precio, sesion: sesion })
+            });
+
+            document.getElementById('modalNuevaPrenda').value = '';
+            document.getElementById('modalNuevoPrecio').value = '';
+            document.getElementById('modalNuevaPrenda').focus();
+
+            await cargarCuaderno();
+            renderizarInteriorModal(cliente);
+        }
+
+        async function eliminarPrendaModal(idDetalle, alias) {
+            await fetch(`/api/carrito/${idDetalle}`, { method: 'DELETE' });
+            await cargarCuaderno();
+            if(!datosGlobales[alias] || datosGlobales[alias].total <= 0) modalCarritoInstancia.hide();
+            else renderizarInteriorModal(alias);
+        }
+
+        async function abrirModalGanancias() {
+            const response = await fetch('/api/ganancias');
+            const data = await response.json();
+            
+            const tabla = document.getElementById('tablaGanancias');
+            tabla.innerHTML = '';
+            
+            let granTotal = 0;
+            let mesActualStr = '';
+            const mesesDelAno = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+            data.forEach(fila => {
+                granTotal += parseFloat(fila.recaudado);
+                
+                const partesFecha = fila.fecha.split('-'); 
+                const mesNombre = mesesDelAno[parseInt(partesFecha[1]) - 1];
+                const mesAgrupacion = `${mesNombre} ${partesFecha[2]}`;
+
+                if (mesAgrupacion !== mesActualStr) {
+                    mesActualStr = mesAgrupacion;
+                    tabla.innerHTML += `
+                        <tr class="table-dark">
+                            <td colspan="5" class="fw-bold text-uppercase py-2">🗓️ ${mesActualStr}</td>
+                        </tr>
+                    `;
+                }
+
+                tabla.innerHTML += `
+                    <tr>
+                        <td class="fw-bold ps-3">
+                            <a href="#" class="text-decoration-none text-primary" onclick="cargarSesionPasada('${fila.sesion}')">
+                                🔍 ${fila.sesion}
+                            </a>
+                        </td>
+                        <td class="text-muted">${fila.fecha}</td>
+                        <td class="text-center">${fila.clientes}</td>
+                        <td class="text-end fw-bold text-success pe-4">${formatearCLP(fila.recaudado)}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-danger fw-bold" onclick="eliminarSesion('${fila.sesion}')" title="Eliminar Live">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tabla.innerHTML += `
+                <tr class="table-info sticky-bottom">
+                    <td colspan="3" class="text-end fw-bold py-3">TOTAL HISTÓRICO GLOBAL:</td>
+                    <td class="text-end fw-bold text-success fs-5 py-3 pe-4">${formatearCLP(granTotal)}</td>
+                    <td></td>
+                </tr>
+            `;
+            
+            modalGananciasInstancia.show();
+        }
+
+        function cargarSesionPasada(nombreSesion) {
+            modalGananciasInstancia.hide();
+            document.getElementById('sesionInput').value = nombreSesion;
+            cargarCuaderno();
+        }
+
+        //Eliminar una sesión con doble confirmación
+        async function eliminarSesion(sesion) {
+            // Confirmación 1
+            const paso1 = confirm(`¿Estás SEGURO de que quieres borrar el directo "${sesion}"?\n\nEsto borrará a todos los clientes y ventas anotadas en ese Live.`);
+            if(!paso1) return;
+            
+            // Confirmación 2
+            const paso2 = confirm(`⚠️ ÚLTIMO AVISO ⚠️\n\nEsta acción no se puede deshacer de ninguna manera. ¿Borrar definitivamente "${sesion}"?`);
+            if(!paso2) return;
+
+            // Petición de borrado seguro con URL codificada
+            await fetch(`/api/sesion?sesion=${encodeURIComponent(sesion)}`, { method: 'DELETE' });
+            
+            // Refrescar el historial visualmente
+            abrirModalGanancias();
+            
+            // Si estaba mirando ese mismo live en el fondo, limpiar el cuaderno
+            if(document.getElementById('sesionInput').value === sesion) {
+                crearNuevoLive();
+            }
+        }
+    </script>
+</body>
+</html>
